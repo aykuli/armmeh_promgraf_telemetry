@@ -27,7 +27,6 @@ scrape_configs:
 
     static_configs:
       - targets: ["localhost:9090"]
-       # The label name is added as a label `label_name=<label_value>` to any timeseries scraped from this config.
         labels:
           app: "prometheus"
 
@@ -36,18 +35,25 @@ scrape_configs:
       - targets: ["mqtt-exporter:9641"]
     metric_relabel_configs:
       - source_labels: [__name__, topic]
-        regex: "^speed;([^/]+)/([^/]+)/([^/]+)/telemetry$"
+        # Matches: mqtt_anyname;vehicle_type/fuel_type/vehicle_id/telemetry
+        regex: "^(mqtt_[^;]+);([^/]+)/([^/]+)/([^/]+)/telemetry$"
         target_label: vehicle_type
-        replacement: "${1}"
-        action: replace
-      - source_labels: [__name__, topic]
-        regex: "^speed;([^/]+)/([^/]+)/([^/]+)/telemetry$"
-        target_label: fuel_type
         replacement: "${2}"
         action: replace
+
       - source_labels: [__name__, topic]
-        regex: "^speed;([^/]+)/([^/]+)/([^/]+)/telemetry$"
-        target_label: deviceid
+        regex: "^(mqtt_[^;]+);([^/]+)/([^/]+)/([^/]+)/telemetry$"
+        target_label: fuel_type
         replacement: "${3}"
         action: replace
+
+      - source_labels: [__name__, topic]
+        regex: "^(mqtt_[^;]+);([^/]+)/([^/]+)/([^/]+)/telemetry$"
+        target_label: vehicle_id
+        replacement: "${4}"
+        action: replace
+
+      - regex: "^sensor$"
+        action: labeldrop
+
 

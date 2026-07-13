@@ -2,3 +2,5 @@
 password.txt
 mosquitto/data
 mosquitto/log
+grafana/data
+
