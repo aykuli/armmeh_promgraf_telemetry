@@ -13,16 +13,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--web.console.libraries=/usr/share/prometheus/console_libraries'
       - '--web.console.templates=/usr/share/prometheus/consoles'
-      - '--web.enable-otlp-receiver' # todo remove
-      - '--enable-feature=utf8-names'
-      - '--enable-feature=otlp-type-fallback'
     ports:
       - '9090:9090'
-    environment:
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://localhost:9090/v1/metrics
-      - OTEL_TRACES_EXPORTER=none
-      - OTEL_LOGS_EXPORTER=none
-      - OTEL_EXPORTER_OTLP_PROTOCOL=http
     networks:
       - monitoring
     
@@ -32,7 +24,9 @@ services:
     ports:
       - '1883:1883'
     volumes:
-      - ./mosquitto:/mosquitto/config
+      - ./mosquitto/config:/mosquitto/config
+      - ./mosquitto/data:/mosquitto/data
+      - ./mosquitto/log:/mosquitto/log
     networks:
       - monitoring
     restart: unless-stopped
@@ -41,12 +35,10 @@ services:
     image: ghcr.io/hikhvar/mqtt2prometheus:v0.1.8-RC2
     container_name: mqtt_exporter
     volumes:
-      - ./mqtt2prometheus:/config
+      - ./mqtt2prometheus/config:/config
+      - ./mqtt2prometheus/cache:/var/lib/mqtt2prometheus
     command:
       - '-config=/config/config.yml'
-      # - '-listen-address=0.0.0.0'
-      # - "-listen-port=9641"
-      # - "-log-level=debug"
     ports:
       - '9641:9641'
     entrypoint:

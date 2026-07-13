@@ -5,8 +5,30 @@
 ```mermaid
 flowchart LR
 
+s[Vehicle sensors] -->
 mosquitto --mqtt\nover\njson--> mqttexp["MQTT\nexporter"] --prom\ndata--> prom[Prometheus\nServer] --> graf[UI]
 ```
+
+or
+
+![](./assets/mqqt_broker.svg)
+
+## mosquitto суета:
+
+sudo chown 1883:1883 mosquitto/config/password.txt
+$ docker exec -it mosquitto mosquitto_passwd -b /mosquitto/config/password.txt aynur qwertyAynur
+
+Искреннее уважение к разработчикам этих инструментов за понятные тексты ошибок:
+
+![](./assets/0.png)
+
+Креди пробросить удалось, тест без авторизации показал защиту, а с авторизацией показал, что mqtt экспортер получил сообщение. Дальше надо настроить Прометеус на подписку к этому экспортеру.
+
+![](./assets/1.png)
+![](./assets/2.png)
+
+Дальше настраивала Прометеус. Источник настроила, хотелось поля получить из пути. Пока через москито конфигурацию не получилось, пока только в промметеусе сделала. Может это и лучше вариант - в прометеусе, а не в москито разбирать по пути топика тип топлива, машину и id машины.
+
 
 <details>
 <summary>Задание

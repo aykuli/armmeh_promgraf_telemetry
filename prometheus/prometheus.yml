@@ -1,7 +1,7 @@
 # my global config
 global:
-  scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
-  evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+  scrape_interval: 2s
+  evaluation_interval: 2s 
   # scrape_timeout is set to the global default (10s).
 
 # Alertmanager configuration
@@ -31,11 +31,23 @@ scrape_configs:
         labels:
           app: "prometheus"
 
-  - job_name: "mqtt_vehicles"
-    relabel_configs:
-      - source_labels: [topic]
-        regex: "^([^/]+)/([^/]+)/[^/]+/telemetry$"
+  - job_name: "vehicles"
+    static_configs:
+      - targets: ["mqtt-exporter:9641"]
+    metric_relabel_configs:
+      - source_labels: [__name__, topic]
+        regex: "^speed;([^/]+)/([^/]+)/([^/]+)/telemetry$"
         target_label: vehicle_type
         replacement: "${1}"
+        action: replace
+      - source_labels: [__name__, topic]
+        regex: "^speed;([^/]+)/([^/]+)/([^/]+)/telemetry$"
+        target_label: fuel_type
+        replacement: "${2}"
+        action: replace
+      - source_labels: [__name__, topic]
+        regex: "^speed;([^/]+)/([^/]+)/([^/]+)/telemetry$"
+        target_label: deviceid
+        replacement: "${3}"
         action: replace
 
