@@ -1,29 +1,21 @@
 networks:
   monitoring:
     driver: bridge
+volumes:
+  mqtt2prometheus_cache:
+  prometheus_data:
+  victoria_metrics_data:
+  grafana_data:
 
 services:
-  prometheus:
-    image: prom/prometheus:v3.13.1
-    container_name: prometheus
-    volumes:
-      - ./prometheus:/etc/prometheus
-    command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
-      - '--web.console.templates=/usr/share/prometheus/consoles'
-    ports:
-      - '9090:9090'
-    networks:
-      - monitoring
-    
+  # здесь будет сервис, котрый имитирует устройства
+
+  # --- БРОКЕР ОЧЕРЕДИ СООБЩЕНИЙ ---
   mosquitto:
     image: eclipse-mosquitto:2.1.2-alpine
     container_name: mosquitto
     volumes:
       - ./mosquitto/config:/mosquitto/config
-      - ./mosquitto/data:/mosquitto/data
       - ./mosquitto/log:/mosquitto/log
     ports:
       - '1883:1883'
@@ -31,12 +23,13 @@ services:
       - monitoring
     restart: unless-stopped
 
+  # --- КОНВЕРТЕР MQTT -> PROMETHEUS ---
   mqtt-exporter:
     image: ghcr.io/hikhvar/mqtt2prometheus:v0.1.8-RC2
     container_name: mqtt_exporter
     volumes:
       - ./mqtt2prometheus/config:/config
-      - ./mqtt2prometheus/cache:/var/lib/mqtt2prometheus
+      - mqtt2prometheus_cache:/var/lib/mqtt2prometheus
     command:
       - '-config=/config/config.yml'
     ports:
@@ -53,11 +46,43 @@ services:
       - mosquitto
       - prometheus
 
+  # --- МОНИТОРИНГ И СБОР МЕТРИК ---
+  prometheus:
+    image: prom/prometheus:v3.13.1
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--storage.tsdb.retention.size=10GB'
+    ports:
+      - '9090:9090'
+    networks:
+      - monitoring
+
+  # --- ДОЛГОСРОЧНОЕ ХРАНИЛИЩЕ МЕТРИК ---
+  victoriametrics:
+    image: victoriametrics/victoria-metrics:v1.101.0
+    container_name: victoria_metrics
+    ports:
+      - '8428:8428'
+    volumes:
+      - victoria_metrics_data:/victoria-metrics-data
+    networks:
+      - monitoring
+    restart: unless-stopped
+
+  # --- ВИЗУАЛИЗАЦИЯ И КАРТЫ ---
   grafana:
     image: grafana/grafana:11.6.15-ubuntu
     container_name: grafana
     volumes:
-      - ./grafana/data:/var/lib/grafana
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
     ports:
       - '3000:3000'
       - '8080:8080'
@@ -70,4 +95,5 @@ services:
       - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
     depends_on:
       - prometheus
-
+      - victoriametrics
+    restart: unless-stopped

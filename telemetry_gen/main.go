@@ -5,18 +5,114 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/kelseyhightower/envconfig"
 )
 
+type MQTTconfigs struct {
+	url            string
+	user           string
+	password       string
+	keepAliveSec   int
+	pingTimeoutSec int
+}
+
+type VehicleInfo struct {
+	id           int
+	startLat     float64
+	startLon     float64
+	vehicleType  string
+	fuelType     string
+	engineStatus string
+}
+
 func main() {
-	options := mqtt.NewClientOptions().AddBroker("tcp://localhost:1883")
-	options.SetClientID("aynur_telemetry_generator")
-	options.SetKeepAlive(2 * time.Second)
-	options.SetPingTimeout(1 * time.Second)
-	options.SetPassword("qwertyAynur")
-	options.SetUsername("aynur")
+	// Базовые координаты центрального гаража
+	baseLat := 55.7485
+	baseLon := 37.6085
+	vehicleCount := 100
+
+	var wg sync.WaitGroup
+	log.Printf("Start simulation for %d vehicles", vehicleCount)
+
+	engineOffIndices := map[int]bool{
+		8: true, 9: true, 11: true, 12: true,
+		22: true, 23: true, 33: true, 34: true,
+	}
+
+	for i := 1; i <= vehicleCount; i++ {
+		wg.Add(1)
+
+		vehicleType, fuelType := getVehicleSpecs(i)
+		if vehicleType == "unknown" || fuelType == "unknown" {
+			continue
+		}
+
+		engineStatus := "on"
+		if engineOffIndices[i] {
+			engineStatus = "off"
+		}
+
+		vehicleInfo := VehicleInfo{
+			id:           i,
+			startLat:     baseLat + (float64(i)-1)*0.003,
+			startLon:     baseLon + (float64(i)-1)*0.003,
+			vehicleType:  vehicleType,
+			fuelType:     fuelType,
+			engineStatus: engineStatus}
+
+		var mqttConfigs MQTTconfigs
+		if err := envconfig.Process("mqtt", &mqttConfigs); err != nil {
+			log.Fatal("Provide MQTT broker configuration, dureha")
+		}
+
+		go func(vehicleInfo VehicleInfo, mqttConfigs MQTTconfigs) {
+			defer wg.Done()
+
+			runVehicle(vehicleInfo, mqttConfigs)
+		}(vehicleInfo, mqttConfigs)
+	}
+
+	wg.Wait()
+}
+
+/*
+1..8   tractor
+9..20  forklift
+21..29 robot
+30..45 cart
+*/
+func getVehicleSpecs(i int) (vehicleType string, fuelType string) {
+	switch {
+	case i >= 1 && i <= 8:
+		vehicleType = "tractor"
+		fuelType = "diesel"
+	case i >= 9 && i <= 20:
+		vehicleType = "forklift"
+		fuelType = "electric"
+	case i >= 21 && i <= 29:
+		vehicleType = "robot"
+		fuelType = "electric"
+	case i >= 30 && i <= 45:
+		vehicleType = "cart"
+		fuelType = "electric"
+	default:
+		vehicleType = "unknown"
+		fuelType = "unknown"
+	}
+	return
+}
+
+func runVehicle(vehicleInfo VehicleInfo, mqttConfigs MQTTconfigs) {
+	options := mqtt.NewClientOptions().AddBroker(mqttConfigs.url)
+	options.SetClientID(fmt.Sprintf("aynur_telemetry_gen_%d", vehicleInfo.id))
+	options.SetKeepAlive(time.Duration(mqttConfigs.keepAliveSec) * time.Second)
+	options.SetPingTimeout(time.Duration(mqttConfigs.pingTimeoutSec) * time.Second)
+	options.SetPassword(mqttConfigs.password)
+	options.SetUsername(mqttConfigs.user)
 
 	client := mqtt.NewClient(options)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
@@ -26,9 +122,7 @@ func main() {
 
 	log.Println("Connection to MQTT Broker was successfully made.")
 
-	lat := 55.7489
-	lon := 37.6087
-	path := GenerateCircularPath(&lat, &lon)
+	path := GenerateCircularPath(&vehicleInfo.startLat, &vehicleInfo.startLon)
 	pointIndex := 0
 
 	ticker := time.NewTicker(15 * time.Second)
@@ -38,13 +132,10 @@ func main() {
 		currentCoord := path[pointIndex]
 		pointIndex = (pointIndex + 1) % len(path)
 
-		vehicleType := "tractor"
-		fuelType := "diesel"
-		vehicleId := 12
 		payload := TractorTelemetryPayload{
 			TelemetryPayload: TelemetryPayload{
 				SchemaVersion: 1,
-				VehicleID:     vehicleId,
+				VehicleID:     vehicleID,
 				VehicleType:   vehicleType,
 				FuelType:      fuelType,
 				Timestamp:     time.Now().UnixMilli(),
@@ -70,7 +161,7 @@ func main() {
 			log.Fatalf("Marshalling payload error: %v", err)
 			continue
 		}
-		topic := fmt.Sprintf("%s/%s/%d/telemetry", vehicleType, fuelType, vehicleId)
+		topic := fmt.Sprintf("%s/%s/%d/telemetry", vehicleInfo.vehicleType, vehicleInfo.fuelType, vehicleInfo.id)
 
 		token := client.Publish(topic, 0, false, jsonBytes)
 		token.Wait()

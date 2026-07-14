@@ -30,6 +30,20 @@ $ docker exec -it mosquitto mosquitto_passwd -b /mosquitto/config/password.txt a
 Дальше настраивала Прометеус. Источник настроила, хотелось поля получить из пути. Пока через москито конфигурацию не получилось, пока только в промметеусе сделала. Может это и лучше вариант - в прометеусе, а не в москито разбирать по пути топика тип топлива, машину и id машины.
 
 
+##  подход Dashboard-as-Code for Grafana (или Provisioning).
+
+```mermaid
+treeView-beta
+"grafana"
+    "provisioning"
+        "datasources"
+            "datasources.yaml"
+        "dashboards"
+            "dashboards.yaml"
+    "dashboards"
+        "vehicles.json"
+```
+
 <details>
 <summary>Задание
 </summary>

@@ -4,6 +4,8 @@ global:
   evaluation_interval: 2s 
   # scrape_timeout is set to the global default (10s).
 
+remote_write:
+  - url: "http://victoriametrics:8428/api/v1/write"
 # Alertmanager configuration
 alerting:
   alertmanagers:
