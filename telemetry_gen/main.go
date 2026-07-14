@@ -4,20 +4,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
+	"os"
 	"sync"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/joho/godotenv"
 )
 
-type MQTTconfigs struct {
-	url            string
-	user           string
-	password       string
-	keepAliveSec   int
-	pingTimeoutSec int
+type config struct {
+	url      string
+	user     string
+	password string
 }
 
 type VehicleInfo struct {
@@ -30,6 +28,18 @@ type VehicleInfo struct {
 }
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	mqttConfigs := config{
+		url:      os.Getenv("MQTT_BROKER_URL"),
+		user:     os.Getenv("MQTT_USER"),
+		password: os.Getenv("MQTT_PASS"),
+	}
+
+	fmt.Printf("MQTT onfigs %+v", mqttConfigs)
+
 	// Базовые координаты центрального гаража
 	baseLat := 55.7485
 	baseLon := 37.6085
@@ -64,12 +74,7 @@ func main() {
 			fuelType:     fuelType,
 			engineStatus: engineStatus}
 
-		var mqttConfigs MQTTconfigs
-		if err := envconfig.Process("mqtt", &mqttConfigs); err != nil {
-			log.Fatal("Provide MQTT broker configuration, dureha")
-		}
-
-		go func(vehicleInfo VehicleInfo, mqttConfigs MQTTconfigs) {
+		go func(vehicleInfo VehicleInfo, mqttConfigs config) {
 			defer wg.Done()
 
 			runVehicle(vehicleInfo, mqttConfigs)
@@ -106,11 +111,11 @@ func getVehicleSpecs(i int) (vehicleType string, fuelType string) {
 	return
 }
 
-func runVehicle(vehicleInfo VehicleInfo, mqttConfigs MQTTconfigs) {
+func runVehicle(vehicleInfo VehicleInfo, mqttConfigs config) {
 	options := mqtt.NewClientOptions().AddBroker(mqttConfigs.url)
 	options.SetClientID(fmt.Sprintf("aynur_telemetry_gen_%d", vehicleInfo.id))
-	options.SetKeepAlive(time.Duration(mqttConfigs.keepAliveSec) * time.Second)
-	options.SetPingTimeout(time.Duration(mqttConfigs.pingTimeoutSec) * time.Second)
+	options.SetKeepAlive(2 * time.Second)
+	options.SetPingTimeout(2 * time.Second)
 	options.SetPassword(mqttConfigs.password)
 	options.SetUsername(mqttConfigs.user)
 
@@ -120,7 +125,7 @@ func runVehicle(vehicleInfo VehicleInfo, mqttConfigs MQTTconfigs) {
 	}
 	defer client.Disconnect(500) // milliseconds to wait for existing work to be completed
 
-	log.Println("Connection to MQTT Broker was successfully made.")
+	log.Printf("%d - %s - %s connected to MQTT Broker", vehicleInfo.id, vehicleInfo.vehicleType, vehicleInfo.fuelType)
 
 	path := GenerateCircularPath(&vehicleInfo.startLat, &vehicleInfo.startLon)
 	pointIndex := 0
@@ -132,30 +137,7 @@ func runVehicle(vehicleInfo VehicleInfo, mqttConfigs MQTTconfigs) {
 		currentCoord := path[pointIndex]
 		pointIndex = (pointIndex + 1) % len(path)
 
-		payload := TractorTelemetryPayload{
-			TelemetryPayload: TelemetryPayload{
-				SchemaVersion: 1,
-				VehicleID:     vehicleID,
-				VehicleType:   vehicleType,
-				FuelType:      fuelType,
-				Timestamp:     time.Now().UnixMilli(),
-			},
-			Metrics: TractorMetrics{
-				MetricCommon: MetricCommon{
-					GpsLat:       currentCoord.Lat,
-					GpsLon:       currentCoord.Lon,
-					GpsAlt:       17.8,
-					SpeedKmh:     rand.Float64() * 15.0, // Speed between 0 and 15 km/h
-					EngineStatus: "on",
-				},
-				EngineRPM:      1200,
-				FuelLevelPct:   78 + (rand.Int() * 10.0),
-				TempC:          82.5 + (rand.Float64() * 10.0),
-				OilPressureBar: 2.1 + (rand.Float64() * 10.0),
-				EngineHours:    1234.5 + (rand.Float64() - 0.5),
-			},
-		}
-
+		payload := createPayload(vehicleInfo, currentCoord)
 		jsonBytes, err := json.MarshalIndent(payload, "", "  ")
 		if err != nil {
 			log.Fatalf("Marshalling payload error: %v", err)

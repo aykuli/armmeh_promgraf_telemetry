@@ -9,7 +9,7 @@ var RobotModes = []string{"idle", "human", "teleop", "supervis", "autonom"}
 var RobotMissionStatuses = []string{"none", "pause", "run", "complete", "autonom"}
 var RobotRTKStatuses = []string{"fix", "float", "none"}
 
-func CreatePayload(vehicleInfo VehicleInfo, coord Coordinate) any {
+func createPayload(vehicleInfo VehicleInfo, coord Coordinate) any {
 	commonPayload := TelemetryPayload{
 		SchemaVersion: 1,
 		VehicleID:     vehicleInfo.id,
