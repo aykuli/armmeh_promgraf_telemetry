@@ -1,0 +1,43 @@
+groups:
+  - name: electric_telemetry_alerts
+    rules:
+      # 🔴 Разряд тяговой батареи (<10%)
+      - alert: ElectricBatteryCriticalDischarge
+        expr: mqtt_battery_soc_pct{fuel_type="electric"} < 10
+        for: 30s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Критический разряд батареи ТС ID {{ $labels.vehicle_id }}"
+          description: "Уровень заряда батареи упал до {{ $value }}%. Риск аварийной остановки."
+
+      # 🟠 Перегрев аккумулятора (>60°C)
+      - alert: ElectricBatteryOverheat
+        expr: mqtt_battery_temp_c{fuel_type="electric"} > 60
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Перегрев аккумулятора ТС ID {{ $labels.vehicle_id }}"
+          description: "Температура батарейного блока поднялась до {{ $value }} °C. Риск деградации!"
+
+      # 🟠 Аномальный ток потребления при сильной нагрузке
+      - alert: ElectricCurrentOverload
+        expr: mqtt_current_a{fuel_type="electric"} > 150
+        for: 5s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Перегрузка по току на ТС ID {{ $labels.vehicle_id }}"
+          description: "Ток разряда превысил допустимый рабочий порог и составляет {{ $value }} А."
+      
+      # 🟠 Превышение скорости (ограничение 15 км/ч для всех типов ТС)
+      - alert: FleetVehicleSpeedLimitExceeded
+        expr: mqtt_speed{fuel_type="electric"} > 15
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Превышение скорости на ТС ID {{ $labels.vehicle_id }}"
+          description: "Объект типа {{ $labels.vehicle_type }} движется со скоростью {{ $value }} км/ч. Допустимый лимит: 15 км/ч."
+

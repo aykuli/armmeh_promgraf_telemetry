@@ -44,6 +44,17 @@ treeView-beta
         "vehicles.json"
 ```
 
+
+Node exporter full got there: https://grafana.com/grafana/dashboards/1860-node-exporter-full/
+
+
+
+Futher dos:
+* Добавление Grafana Loki в этот же Compose-стек для сбора и анализа текстового массива "events" из  JSON-сообщений.
+* Настройка Prometheus *Alertmanager для отправки алертов в Telegram/Slack, если у трактора упадет давление масла или пропадет связь.
+* Docker-образа Go-приложения через Multi-stage build для деплоя.
+
+
 <details>
 <summary>Задание
 </summary>
@@ -141,3 +152,4 @@ resourses:
 * https://github.com/prometheus-community/postgres_exporter
 
 * https://hub.docker.com/r/prom/prometheus/tags
+* https://grafana.com/blog/how-to-integrate-grafana-alerting-and-telegram/ 

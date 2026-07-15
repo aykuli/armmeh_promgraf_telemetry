@@ -1495,6 +1495,6 @@
   },
   "timezone": "browser",
   "title": "Состояние парка",
-  "uid": "fleet_telemetry_01",
+  "uid": "park_state",
   "version": 57
 }

@@ -56,7 +56,7 @@ metrics:
     type: gauge
   - prom_name: mqtt_diesel_fuel_level_pct
     mqtt_name: metrics.fuel_level_pct
-    help: Уровень двигателя
+    help: Уровень топлива двигателя
     type: gauge
   - prom_name: mqtt_diesel_temp_c
     mqtt_name: metrics.temp_c
@@ -118,7 +118,7 @@ metrics:
     type: gauge
   - prom_name: mqtt_robot_estop_status
     mqtt_name: metrics.estop_status
-    help: Robot Status
+    help: Нажатие кнопки Emergency Stop
     type: gauge
     string_value_mapping:
       map:
@@ -126,13 +126,13 @@ metrics:
         on: 1
   - prom_name: mqtt_robot_rtk_status
     mqtt_name: metrics.rtk_status
-    help: Robot RTK Status
+    help: RTK Status отражает качество и точность обработки поправок от базовой станции
     type: gauge
     string_value_mapping:
       map:
         none: 0
-        fix: 1
-        float: 2
+        float: 1 # поправки обрабатываются, точность приближается к сантиметровой, но алгоритм еще не зафиксировал фазовую неопределенность (сигнал нестабилен).
+        fix: 2   # : идеальное состояние, алгоритм зафиксировал фазу, достигнута максимальная сантиметровая точность позиционирования.
   - prom_name: mqtt_robot_steering_angle_deg
     mqtt_name: metrics.steering_angle_deg
     help: Robot Steering angle

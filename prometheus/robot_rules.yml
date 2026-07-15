@@ -1,0 +1,52 @@
+groups:
+  - name: robot_telemetry_alerts
+    rules:
+      # 🔴 Перегрев бортового управляющего процессора CPU (>85°C)
+      - alert: RobotCpuOverheat
+        expr: mqtt_temp_cpu_c{vehicle_type="robot"} > 85
+        for: 10s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Перегрев CPU робота ID {{ $labels.vehicle_id }}"
+          description: "Температура процессора вычислителя достигла {{ $value }} °C. Риск троттлинга или зависания навигации."
+
+      # 🟠 Падение уровня сигнала связи LTE (RSSI ниже -85 dBm)
+      - alert: RobotWeakLteSignal
+        expr: mqtt_lte_rssi{vehicle_type="robot"} < -85
+        for: 30s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Слабый сигнал связи LTE у робота ID {{ $labels.vehicle_id }}"
+          description: "Уровень RSSI составляет {{ $value }} dBm. Опасность потери пакетов управления и задержки телеметрии."
+
+      # 🔴 Активация аппаратной или программной кнопки E-STOP (Аварийный стоп)
+      - alert: RobotEmergencyStopActivated
+        expr: mqtt_estop_status{vehicle_type="robot"} == 1
+        for: 0s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Нажат МГНОВЕННЫЙ СТОП (E-Stop) на роботе ID {{ $labels.vehicle_id }}"
+          description: "Зафиксирована активация системы экстренной остановки. Работа миссии ID {{ query \"mqtt_mission_id\" }} принудительно заблокирована!"
+
+      # 🟠 Потеря навигационного GPS/RTK-сигнала (статус отличный от fix)
+      - alert: FleetVehicleLostRTKFix
+        expr: mqtt_rtk_status{vehicle_type="robot"} == 1
+        for: 15s
+        labels:
+          severity: warning
+        annotations:
+          summary:  " 🟠 Потеря точности RTK на роботе ID {{ $labels.vehicle_id }}"
+          description: "статус точности RTK упал (значение: {{ $value }}). Риск схода с траектории!"
+
+      # 🔴 Потеря навигационного GPS/RTK-сигнала
+      - alert: FleetVehicleLostRTKFix
+        expr: mqtt_rtk_status{vehicle_type="robot"} == 0
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Потеря точности RTK на роботе ID {{ $labels.vehicle_id }}"
+          description: "статус точности RTK упал (значение: {{ $value }}). Риск схода с траектории!"

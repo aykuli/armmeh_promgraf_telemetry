@@ -1,0 +1,52 @@
+groups:
+  - name: diesel_telemetry_alerts
+    rules:
+      # 🔴 Критически низкое давление масла при заведенном двигателе
+      - alert: DieselLowOilPressure
+        expr: mqtt_oil_pressure_bar{fuel_type="diesel"} < 1.0 and mqtt_engine_rpm > 400
+        for: 5s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Аварийное давление масла на тракторе ID {{ $labels.vehicle_id }}"
+          description: "Давление масла упало до {{ $value }} bar на оборотах двигателя {{ query \"mqtt_engine_rpm\" }} RPM."
+
+      # 🔴 Превышение скорости (ограничение 60 км/ч)
+      - alert: FleetVehicleSpeedLimitExceeded
+        expr: mqtt_speed{fuel_type="diesel"} > 60
+        for: 10s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🔴 Превышение скорости на ТС ID {{ $labels.vehicle_id }}"
+          description: "{{ $labels.vehicle_type }} движется со скоростью {{ $value }} км/ч. Допустимый лимит: 60 км/ч."
+
+      # 🟠 Перегрев антифриза (>100°C)
+      - alert: DieselEngineOverheat
+        expr: mqtt_temp_c{fuel_type="diesel"} > 100
+        for: 20s
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Перегрев ДВС трактора ID {{ $labels.vehicle_id }}"
+          description: "Температура двигателя составляет {{ $value }} °C. Риск закипания и заклинивания поршневой группы."
+
+      # 🟠 Hизкий уровень топлива в баке (<15%)
+      - alert: DieselLowFuelLevel
+        expr: mqtt_fuel_level_pct{fuel_type="diesel"} < 15
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "🟠 Низкий уровень топлива на тракторе ID {{ $labels.vehicle_id }}"
+          description: "Остаток топлива в баке: {{ $value }}%. Требуется заправка."
+
+      # 🔵 Длительный простой заведенного ДВС на холостых (High Idle Time)
+      - alert: DieselHighIdleTime
+        expr: mqtt_engine_rpm{fuel_type="diesel"} > 0 and mqtt_speed == 0
+        for: 10m
+        labels:
+          severity: info
+        annotations:
+          summary: "🔵 Длительный простой ДВС на тракторе ID {{ $labels.vehicle_id }}"
+          description: "Трактор заведен, но стоит на месте более 10 минут. Неэффективный расход топлива."

@@ -1,0 +1,24 @@
+groups:
+  - name: common_telemetry_alerts
+    rules:
+      # 🔴 Зависание / Потеря навигационного GPS-сигнала
+      - alert: FleetVehicleGPSNavigationFrozen
+        expr: (stddev_over_time(mqtt_lat{job="vehicles"}[1m]) == 0 or stddev_over_time(mqtt_lon{job="vehicles"}[1m]) == 0) and mqtt_speed > 2
+        for: 15s
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Потеря навигационного GPS на ТС ID {{ $labels.vehicle_id }}"
+          description: "Транспорт имеет активную скорость {{ query \"mqtt_speed\" }} км/ч, но координаты lat/lon полностью застыли. Датчик навигации завис!"
+
+      # 🔴 КРИТИЧЕСКАЯ ТРЕВОГА: Сильный наклон, падение или переворот машины (Определяем по mqtt_alt)
+      # deriv() вычисляет скорость изменения в секунду.
+      # Если модуль (abs) превышает 1.5 метра в секунду, это означает мгновенное падение/опрокидывание.
+      - alert: FleetVehicleRolloverOrSevereTilt
+        expr: abs(deriv(mqtt_alt{job="vehicles"}[5s])) > 1.5
+        for: 0s # Срабатывает мгновенно без задержки, так как ситуация аварийная
+        labels:
+          severity: critical
+        annotations:
+          summary: "🔴 Критический наклон / переворот ТС ID {{ $labels.vehicle_id }}"
+          description: "Зафиксировано аномально резкое изменение высоты (скорость: {{ $value }} м/с). Машина перевернулась, съехала в кювет или упала на бок!"
