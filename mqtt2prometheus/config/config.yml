@@ -18,6 +18,12 @@ json_parsing:
   separator: .
 
 metrics:
+# COMMON
+  - prom_name: mqtt_vid
+    mqtt_name: vehicle_id
+    help: Vehicle id
+    type: gauge
+
   - prom_name: mqtt_speed
     mqtt_name: metrics.speed_kmh
     help: Speed of vehicle
@@ -29,4 +35,113 @@ metrics:
   - prom_name: mqtt_lon
     mqtt_name: metrics.gps_lon
     help: Longitude of vehicle
+    type: gauge
+  - prom_name: mqtt_alt
+    mqtt_name: metrics.gps_alt
+    help: Altitude of vehicle
+    type: gauge
+  - prom_name: mqtt_engine_status
+    mqtt_name: metrics.engine_status
+    help: Engine Status
+    type: gauge
+    string_value_mapping:
+      map:
+        off: 0
+        on: 1
+
+    # DIESEL
+  - prom_name: mqtt_diesel_engine_rpm
+    mqtt_name: metrics.engine_rpm
+    help: Обороты двигателя
+    type: gauge
+  - prom_name: mqtt_diesel_fuel_level_pct
+    mqtt_name: metrics.fuel_level_pct
+    help: Уровень двигателя
+    type: gauge
+  - prom_name: mqtt_diesel_temp_c
+    mqtt_name: metrics.temp_c
+    help: Температура двигателя
+    type: gauge
+  - prom_name: mqtt_oil_pressure_bar
+    mqtt_name: metrics.oil_pressure_bar
+    help: Давление масла в двигателе
+    type: gauge
+  - prom_name: mqtt_engine_hours
+    mqtt_name: metrics.engine_hours
+    help: Время работы ТС
+    type: counter
+
+    # ELECTRIC
+  - prom_name: mqtt_electric_battery_soc_pct
+    mqtt_name: metrics.battery_soc_pct
+    help: Уровень батареи
+    type: gauge
+  - prom_name: mqtt_electric_battery_temp_c
+    mqtt_name: metrics.battery_temp_c
+    help: Температура батареи
+    type: gauge
+  - prom_name: mqtt_electric_current_a
+    mqtt_name: metrics.current_a
+    help: Уровень тока в милиАмперах
+    type: gauge
+  - prom_name: mqtt_electric_voltage_v
+    mqtt_name: metrics.voltage_v
+    help: Напряжение в Вольтах
+    type: gauge
+
+    # РОБОТЫ
+  - prom_name: mqtt_robot_mode
+    mqtt_name: metrics.mode
+    help: Режим работы робота
+    type: gauge
+    string_value_mapping:
+      map:
+        idle: 0
+        human: 1
+        teleop: 2
+        supervis: 3
+        autonom: 4
+  - prom_name: mqtt_robot_mission_status
+    mqtt_name: metrics.mission_status
+    help: Статус робота
+    type: gauge
+    string_value_mapping:
+      map:
+        none: 0
+        pause: 1
+        run: 2
+        complete: 3
+        abort: 4
+  - prom_name: mqtt_robot_mission_id
+    mqtt_name: metrics.mission_id
+    help: ID миссии
+    type: gauge
+  - prom_name: mqtt_robot_estop_status
+    mqtt_name: metrics.estop_status
+    help: Robot Status
+    type: gauge
+    string_value_mapping:
+      map:
+        off: 0
+        on: 1
+  - prom_name: mqtt_robot_rtk_status
+    mqtt_name: metrics.rtk_status
+    help: Robot RTK Status
+    type: gauge
+    string_value_mapping:
+      map:
+        none: 0
+        fix: 1
+        float: 2
+  - prom_name: mqtt_robot_steering_angle_deg
+    mqtt_name: metrics.steering_angle_deg
+    help: Robot Steering angle
+    type: gauge
+  - prom_name: mqtt_robot_temp_cpu_c
+    mqtt_name: metrics.temp_cpu_c
+    help:  Температура ЦПУ робота
+    type: gauge
+  - prom_name: mqtt_robot_lte_rssi
+    mqtt_name: metrics.lte_rssi
+    help: Received Signal Strength Indicator. Oбщий показатель мощности радиосигнала, который принимает антенна вашего устройства (смартфона или модема)
     type: gauge
