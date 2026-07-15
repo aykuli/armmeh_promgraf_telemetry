@@ -1,4 +1,3 @@
-# my global config
 global:
   scrape_interval: 2s
   evaluation_interval: 2s 
@@ -18,15 +17,15 @@ rule_files:
   # - "first_rules.yml"
   # - "second_rules.yml"
 
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
 scrape_configs:
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['host.docker.internal:9100']
+      
   # Prometheus exposes data about itself as an HTTP endpoint, it scrapes and monitors its own health
   - job_name: "prometheus"
-
     # metrics_path defaults to '/metrics'
     # scheme defaults to 'http'.
-
     static_configs:
       - targets: ["localhost:9090"]
         labels:

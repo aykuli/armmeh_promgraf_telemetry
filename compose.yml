@@ -9,6 +9,7 @@ volumes:
 
 services:
   # здесь будет сервис, котрый имитирует устройства
+  # может  и бот сюда положу
 
   # --- БРОКЕР ОЧЕРЕДИ СООБЩЕНИЙ ---
   mosquitto:
@@ -23,7 +24,7 @@ services:
       - monitoring
     restart: unless-stopped
 
-  # --- КОНВЕРТЕР MQTT -> PROMETHEUS ---
+  # --- MQTT -> PROMETHEUS ---
   mqtt-exporter:
     image: ghcr.io/hikhvar/mqtt2prometheus:v0.1.8-RC2
     container_name: mqtt_exporter
@@ -44,7 +45,23 @@ services:
       - MQTT2PROM_MQTT_PASSWORD=${MQTT2PROM_MQTT_PASSWORD}
     depends_on:
       - mosquitto
-      - prometheus
+
+  # --- NODE DATA -> PROMETHEUS ---
+  node-exporter:
+    image: prom/node-exporter:master
+    container_name: node_exporter
+    pid: host          # Without pid: host, Node Exporter cannot inspect processes running directly on your host machine
+    network_mode: host # Gives Node Exporter access to real host interfaces (eth0, wlan0, etc.)
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($$|/)'
+    restart: unless-stopped
 
   # --- МОНИТОРИНГ И СБОР МЕТРИК ---
   prometheus:
@@ -62,6 +79,7 @@ services:
       - '9090:9090'
     networks:
       - monitoring
+    extra_hosts: ["host.docker.internal:host-gateway"] # for node-exporter service
 
   # --- ДОЛГОСРОЧНОЕ ХРАНИЛИЩЕ МЕТРИК ---
   victoriametrics:
@@ -86,8 +104,8 @@ services:
     ports:
       - '3000:3000'
       - '8080:8080'
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
     networks:
       - monitoring
     environment:
