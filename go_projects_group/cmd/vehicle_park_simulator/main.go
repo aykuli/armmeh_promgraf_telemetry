@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fleet-monitor/fleet-monitor/internal/payload"
-	"fleet-monitor/fleet-monitor/internal/vechpath"
+	"fleet-app-gr/internal/payload"
+	"fleet-app-gr/internal/vechpath"
 	"fmt"
 	"log"
 	"os"
@@ -104,7 +104,6 @@ func getVehicleSpecs(i int) (vehicleType string, fuelType string) {
 	return
 }
 
-
 func runVehicle(vehicleInfo payload.VehicleInfo, mqttConfigs config) {
 	// индивидуальный сдвиг старта для каждой машины,
 	// чтобы они не отправляли данные одновременно и алерты шли плавной волной.
@@ -122,7 +121,7 @@ func runVehicle(vehicleInfo payload.VehicleInfo, mqttConfigs config) {
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Fatalf("Ошибка соединения к MQTT брокеру: %v", token.Error())
 	}
-	defer client.Disconnect(500) // milliseconds to wait for existing work to be completed
+	defer client.Disconnect(500)
 
 	log.Printf("%d - %s - %s открыл соеднинение к MQTT брокеруr", vehicleInfo.ID, vehicleInfo.VehicleType, vehicleInfo.FuelType)
 

@@ -1,7 +1,7 @@
 package payload
 
 import (
-	"fleet-monitor/fleet-monitor/internal/vechpath"
+	"fleet-app-gr/internal/vechpath"
 	"math/rand"
 	"time"
 )
