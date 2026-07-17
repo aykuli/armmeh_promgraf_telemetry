@@ -11,3 +11,4 @@ prometheus/*_rules.yml
 *.tfstate*
 key.json
 .terraform*
+.htpasswd
