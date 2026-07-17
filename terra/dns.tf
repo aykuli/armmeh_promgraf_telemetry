@@ -6,22 +6,7 @@ resource "yandex_dns_zone" "mymeddataru" {
   public              = true
   zone                = "mymeddata.ru."
 }
-resource "yandex_dns_recordset" "mymeddataru_a_record" {
-  zone_id = yandex_dns_zone.mymeddataru.id
-  name    = "mymeddata.ru."
-  type    = "SOA"
-  ttl     = 6600
-  data = ["ns1.yandexcloud.net. mx.cloud.yandex.net. 1 10800 900 604800 900"]
-}
-resource "yandex_dns_recordset" "mymeddataru_a_record" {
-  zone_id = yandex_dns_zone.mymeddataru.id
-  name    = "mymeddata.ru."
-  type    = "NS"
-  ttl     = 3600
-  
-  data = ["ns1.yandexcloud.net.", "ns2.yandexcloud.net."]
-}
-resource "yandex_dns_recordset" "mymeddataru_a_record" {
+resource "yandex_dns_recordset" "mymeddataru_a" {
   zone_id = yandex_dns_zone.mymeddataru.id
   name    = "mymeddata.ru."
   type    = "A"

@@ -23,28 +23,28 @@ resource "yandex_vpc_security_group" "aynur-monitoring-sg" {
 
   network_id  = yandex_vpc_network.ayn-monitoring-netw.id
   ingress {
-    protocol    = "TCP"
-    v4_cidr_blocks     = ["0.0.0.0/0"]
-    port        = 22
-    description = "Allow SSH"
+    protocol       = "TCP"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    port           = 22
+    description    = "Allow SSH"
   }
   ingress {
-    protocol    = "TCP"
-    v4_cidr_blocks     = ["0.0.0.0/0"]
-    port        = 80
-    description = "Allow HTTP"
+    protocol       = "TCP"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    port           = 80
+    description    = "Allow HTTP"
   }
   ingress {
-    protocol    = "TCP"
-    v4_cidr_blocks     = ["0.0.0.0/0"]
-    port        = 443
-    description = "Allow HTTPS"
+    protocol       = "TCP"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    port           = 443
+    description    = "Allow HTTPS"
   }
   
   egress {
-    protocol    = "ANY"
-    v4_cidr     = ["0.0.0.0/0"]
-    description = "Permit ANY"
+    protocol       = "ANY"
+    v4_cidr_blocks = ["0.0.0.0/0"]
+    description    = "Permit ANY"
   }
 }
 

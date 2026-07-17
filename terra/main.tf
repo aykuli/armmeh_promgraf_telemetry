@@ -36,10 +36,10 @@ resource "yandex_compute_instance" "vm" {
     ssh-keys = "${var.github_user}:${var.ssh_public_key}"
 
     user-data = templatefile("cloud-init.yml", {
-      github_user  = var.github_user,
-      github_token = var.github_token,
-      github_repo  = var.github_repo,
-
+      github_user         = var.github_user,
+      github_token        = var.github_token,
+      github_repo         = var.github_repo,
+      ssh_public_key      = var.ssh_public_key,
       tg_bot_token        = var.tg_bot_token,
       tg_chat_id          = var.tg_chat_id,
       mqtt_broker_url     = var.mqtt_broker_url,
@@ -59,5 +59,5 @@ resource "yandex_compute_instance" "vm" {
 }
 
 output "public_ip" {
-  value = yandex_compute_instance.vms.0.network_interface[0].nat_ip_address
+  value = yandex_compute_instance.vm.network_interface[0].nat_ip_address
 }
