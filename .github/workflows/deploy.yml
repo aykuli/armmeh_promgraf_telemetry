@@ -2,7 +2,7 @@ name: CI/CD Production Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "master" ]
 
 permissions:
   packages: write
