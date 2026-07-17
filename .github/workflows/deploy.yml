@@ -74,7 +74,7 @@ jobs:
 
     - name: Terraform Apply
       run: >
-        terraform apply -auto-approve 
+        terraform apply -auto-approve
         -var="cloud_id=${{ secrets.YC_CLOUD_ID }}"
         -var="folder_id=${{ secrets.YC_FOLDER_ID }}"
         -var="github_user=${{ github.actor }}"

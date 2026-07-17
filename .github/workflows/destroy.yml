@@ -10,6 +10,9 @@ permissions:
 jobs:
   terraform-destroy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terra
     env:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -28,7 +31,8 @@ jobs:
 
     - name: Terraform Destroy
       run: >
-        terraform destroy -auto-approve 
+        terraform destroy -auto-approve
+        -var="cloud_id=${{ secrets.YC_CLOUD_ID }}"
         -var="folder_id=${{ secrets.YC_FOLDER_ID }}"
         -var="github_user=${{ github.actor }}"
         -var="github_token=${{ secrets.GITHUB_TOKEN }}"
@@ -47,4 +51,4 @@ jobs:
         -var="postgres_db=${{ secrets.POSTGRES_DB }}"
         -var="postgres_user=${{ secrets.POSTGRES_USER }}"
         -var="postgres_pass=${{ secrets.POSTGRES_PASSWORD }}"
-        -var="htpasswd_content=${{ secrets.HTPASSWD_CONTENT }}"
+        -var="nginx_htpasswd_content=${{ secrets.NGINX_HTPASSWD_CONTENT }}"
