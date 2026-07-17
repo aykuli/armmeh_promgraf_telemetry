@@ -38,7 +38,7 @@ write_files:
       POSTGRES_DB=${postgres_db}
       POSTGRES_USER=${postgres_user}
       POSTGRES_PASSWORD=${postgres_pass}
-  - path: /opt/app/nginx/.htpasswd
+  - path: /opt/tmp/nginx/.htpasswd
     permissions: '0600'
     owner: root:root
     content: |
@@ -51,8 +51,9 @@ runcmd:
   - echo '----------START ----------------'
   # 2. Создаем структуру и клонируем проект тоже в /opt/app/
   - mkdir -p /opt/app
-  - git clone https://github.com/{github_user}/${github_repo}.git /opt/app-tmp
+  - git clone https://github.com/${github_user}/${github_repo}.git /opt/app-tmp
   - mv /opt/app-tmp/* /opt/app/ && rm -rf /opt/app-tmp
+  - cp /opt/tmp/nginx/.htpasswd /opt/app/nginx
   
   # 3. Генерируем временные заглушки SSL в новой директории
   - mkdir -p /opt/app/certbot/conf/live/mymeddata.ru
@@ -62,9 +63,19 @@ runcmd:
   - cd /opt/app && docker compose up -d nginx
   
   # 5. Запрашиваем НАСТОЯЩИЙ сертификат Let's Encrypt через Certbot
-  - docker compose run --rm certbot certonly --webroot -w /var/www/certbot --cert-name mymeddata.ru -d mymeddata.ru --email aykuli@ya.ru --rsa-key-size 4096 --agree-tos --non-interactive --force-renewal
-  
+  # - docker compose run --rm certbot certonly --webroot -w /var/www/certbot --cert-name mymeddata.ru -d mymeddata.ru --email aykuli@ya.ru --rsa-key-size 4096 --agree-tos --non-interactive --force-renewal
+  - >
+    docker run -it --rm --name certbot 
+    -v "./certbot/conf:/etc/letsencrypt" 
+    -v "/var/lib/letsencrypt:/var/lib/letsencrypt" 
+    -p 80:80 
+    certbot/certbot certonly --standalone 
+    -d mymeddata.ru 
+    --email aykuli@.ya.ru
+    --agree-tos
+    --no-eff-email
+    --non-interactive
   # 6. Финальный перезапуск и поднятие всего продакшен-стека
-  - docker compose kill -s HUP nginx_proxy
   - docker compose up -d
+  - echo '---------- END INITIALIZATION ----------'
 
