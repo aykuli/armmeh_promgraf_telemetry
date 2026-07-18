@@ -7,3 +7,16 @@ datasources:
     url: http://victoriametrics:8428
     isDefault: true
     editable: true
+
+  - name: PostgreSQL_Events
+    type: postgres
+    url: postgres-db:5432
+    database: fms_telemetry
+    user: aynur
+    secureJsonData:
+      password: "qwertyAynur"
+    jsonData:
+      sslmode: 'disable'     # Отключаю SSL, так как они в одной Docker-сети
+      maxOpenConns: 10
+      maxIdleConns: 2
+      connMaxLifecycle: 14400
