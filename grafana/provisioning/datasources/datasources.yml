@@ -14,9 +14,9 @@ datasources:
     database: fms_telemetry
     user: aynur
     secureJsonData:
-      password: "qwertyAynur"
+      password: qwertyAynur
     jsonData:
-      sslmode: 'disable'     # Отключаю SSL, так как они в одной Docker-сети
+      sslmode: disable
       maxOpenConns: 10
       maxIdleConns: 2
       connMaxLifecycle: 14400
