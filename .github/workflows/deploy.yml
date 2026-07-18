@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  # === ЭТАП 1: ПАРАЛЛЕЛЬНАЯ СБОРКА ОБРАЗОВ ===
+  # === ПАРАЛЛЕЛЬНАЯ СБОРКА ОБРАЗОВ ===
   build-images:
     runs-on: ubuntu-latest
     strategy:
@@ -50,22 +50,20 @@ jobs:
     needs: build-images
     runs-on: ubuntu-latest
     steps:
-        # 1. Скачиваем файлы репозитория на раннер GitHub
-    - name: Checkout code
-      uses: actions/checkout@v4
+    # Если нужно файлы конфигурации
+    # Скачиваю файлы репозитория на раннер GitHub
+    # - name: Checkout code
+    #   uses: actions/checkout@v4
 
-    # 2. НОВЫЙ ШАГ: Безопасно копируем только compose.yml и папки с конфигами на сервер
-    - name: Copy Config Files via SCP
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.MY_SERVER_NAME }}
-        username: ${{ github.actor }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        # Указываем, какие файлы и папки нужно перенести (через запятую)
-        source: "compose.yml,nginx/,prometheus/,mosquitto/" 
-        target: "/opt/app"
-        # Флаг clean: false предотвращает удаление папок certbot и данных, которые уже есть на сервере
-        clean: false 
+    # - name: Copy Config Files via SCP
+    #   uses: appleboy/scp-action@v0.1.7
+    #   with:
+    #     host: ${{ secrets.MY_SERVER_NAME }}
+    #     username: ${{ github.actor }}
+    #     key: ${{ secrets.SSH_PRIVATE_KEY }}
+    #     source: "compose.yml,nginx/,prometheus/,mosquitto/,grafana/" 
+    #     target: "/opt/app"
+    #     clean: false 
 
     - name: Compose reload
       uses: appleboy/ssh-action@v1.0.3
@@ -74,10 +72,10 @@ jobs:
         username: ${{ github.actor}}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
         script: |
-          echo "---------- START DEPLOY ----------"
+          echo "---------- START ----------"
           cd /opt/app
           
-          # Авторизуем docker на сервере в GHCR, чтобы он мог стянуть новые образы
+          # Авторизую docker на сервере в GHCR, чтобы он мог стянуть новые образы
           echo "${{ secrets.GITHUB_TOKEN }}" | sudo docker login ghcr.io -u "${{ github.actor }}" --password-stdin
           
           # Скачиваю новые версии собранных образов из реестра пакетов GitHub
@@ -86,4 +84,4 @@ jobs:
           # Перезапускаю измененные контейнеры без остановки всей системы
           sudo docker compose up -d --remove-orphans
           
-          echo "---------- SUCCESSFUL DEPLOY ----------"
+          echo "---------- SUCCESSFULL ----------"

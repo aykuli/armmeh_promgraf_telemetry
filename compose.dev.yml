@@ -115,8 +115,8 @@ services:
       - '--storage.tsdb.path=/prometheus'
       - '--storage.tsdb.retention.time=15d'
       - '--storage.tsdb.retention.size=10GB'
-    #ports:
-    #  - '9090:9090'
+    ports:
+     - '9090:9090'
     networks:
       - monitoring
     extra_hosts: ["host.docker.internal:host-gateway"] # for node-exporter service
@@ -168,8 +168,8 @@ services:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning
       - ./grafana/dashboards:/etc/grafana/dashboards
-    #ports:
-    #  - '3000:3000'
+    ports:
+     - '3000:3000'
     extra_hosts:
       - "host.docker.internal:host-gateway" # Для вебхуков на http://docker.internal
     networks:

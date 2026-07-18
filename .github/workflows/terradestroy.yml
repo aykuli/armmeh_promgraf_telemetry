@@ -29,6 +29,7 @@ jobs:
     - name: Terraform Init
       run: terraform init
 
+    # Вроде как можно без переменных можно запустить команду. Но проверю после сдачи, когда отключу вм
     - name: Terraform Destroy
       run: >
         terraform destroy -auto-approve
