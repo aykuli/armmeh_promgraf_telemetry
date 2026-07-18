@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"math/rand"
 	"net/http"
 	"os"
 	"time"
+
+	"fleet-app-gr/internal/payload"
+	"fleet-app-gr/internal/postgres"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 	"github.com/joho/godotenv"
@@ -20,9 +24,6 @@ type metrics struct {
 	httpDuration              *prometheus.HistogramVec
 	telemetryPacketsProcessed *prometheus.CounterVec
 	telemetryPacketsDropped   prometheus.Counter
-}
-type basePayload struct {
-	VehicleType string `json:"vehicle_type"`
 }
 
 func registerMetrics(reg prometheus.Registerer) *metrics {
@@ -79,7 +80,21 @@ func main() {
 
 	reg := prometheus.NewRegistry()
 	m := registerMetrics(reg)
-	go initMqttClient(m)
+
+	dsn := os.Getenv("POSTGRES_DSN")
+	if dsn == "" {
+		log.Fatal("Критическая ошибка: Переменная POSTGRES_DSN не задана в окружении")
+	}
+	storage, err := postgres.NewStorage(dsn)
+	if err != nil {
+		log.Fatal(err)
+	}
+	ctx := context.Background()
+	if err = storage.Ping(ctx); err != nil {
+		log.Printf("[POSTGRES] Ping err: %v", err)
+	}
+
+	go handleMqttClient(ctx, m, storage)
 
 	mux := http.NewServeMux()
 	mux.Handle("/metrics", promhttp.HandlerFor(reg, promhttp.HandlerOpts{Registry: reg}))
@@ -95,10 +110,9 @@ func main() {
 	if err := http.ListenAndServe(url, mux); err != nil {
 		log.Fatal(err)
 	}
-
 }
 
-func initMqttClient(m *metrics) {
+func handleMqttClient(ctx context.Context, m *metrics, storage *postgres.DBStorage) {
 	opts := mqtt.NewClientOptions().AddBroker(os.Getenv("MQTT_BROKER_URL"))
 	opts.SetClientID("fms_backend_client")
 	opts.SetUsername(os.Getenv("MQTT_USER"))
@@ -106,10 +120,14 @@ func initMqttClient(m *metrics) {
 	opts.SetCleanSession(true)
 
 	var msghandler mqtt.MessageHandler = func(client mqtt.Client, msg mqtt.Message) {
-		var p basePayload
-
+		var p payload.TelemetryPayload
 		if err := json.Unmarshal(msg.Payload(), &p); err != nil {
 			log.Printf("[MQTT Error]: Ошибка сериализации сообщения - %s", err)
+			m.telemetryPacketsDropped.Inc()
+			return
+		}
+		if err := storage.SaveEvent(ctx, p); err != nil {
+			log.Printf("[POSTGRES]: Ошибка сохранения в БД - %s", err)
 			m.telemetryPacketsDropped.Inc()
 			return
 		}
@@ -117,11 +135,12 @@ func initMqttClient(m *metrics) {
 		m.telemetryPacketsProcessed.WithLabelValues(p.VehicleType).Inc()
 		log.Printf("[API MQTT] Пакет успешно учтен для ТС типа: %s", p.VehicleType)
 	}
+
 	client := mqtt.NewClient(opts)
 	if token := client.Connect(); token.Wait() && token.Error() != nil {
 		log.Printf("[MQTT FATAL] Не удалось подключиться к MQTT: %v. Повтор через 2с...", token.Error())
 		time.Sleep(2 * time.Second)
-		go initMqttClient(m)
+		go handleMqttClient(ctx, m, storage)
 		return
 	}
 

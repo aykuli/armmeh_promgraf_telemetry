@@ -19,12 +19,21 @@ type TelemetryPayload struct {
 	Events []Event `json:"events"`
 }
 
+type SeverityType string
+
+const (
+	Info     SeverityType = "info"
+	Warning  SeverityType = "warning"
+	Error    SeverityType = "error"
+	Critical SeverityType = "critical"
+)
+
 type Event struct {
-	EventType   string `json:"event_type"`
-	Severity    string `json:"severity"`
-	Description string `json:"description"`
-	Code        string `json:"code"`
-	Timestamp   int64  `json:"timestamp"`
+	EventType   string       `json:"event_type"`
+	Severity    SeverityType `json:"severity"`
+	Description string       `json:"description"`
+	Code        string       `json:"code"`
+	Timestamp   int64        `json:"timestamp"`
 }
 
 type MetricCommon struct {

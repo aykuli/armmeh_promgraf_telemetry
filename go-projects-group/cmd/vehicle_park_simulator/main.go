@@ -20,6 +20,7 @@ type config struct {
 	password string
 }
 
+
 func main() {
 	_ = godotenv.Load() // для локального запуска
 

@@ -2,6 +2,7 @@ package payload
 
 import (
 	"fleet-app-gr/internal/vechpath"
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -9,6 +10,22 @@ import (
 var RobotModes = []string{"idle", "human", "teleop", "supervis", "autonom"}
 var RobotMissionStatuses = []string{"none", "pause", "run", "complete", "abort"}
 var baseRoomTmp = float32(22.2)
+
+const charset = "abcdefghijklmnopqrstuvwxyz " + "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+var seededRand *rand.Rand = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+func stringWithCharset(length int, charset string) string {
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[seededRand.Intn(len(charset))]
+	}
+	return string(b)
+}
+
+func generateString(length int) string {
+	return stringWithCharset(length, charset)
+}
 
 func CreatePayload(vehicleInfo VehicleInfo, coord vechpath.Coordinate) any {
 	commonPayload := TelemetryPayload{
@@ -24,6 +41,13 @@ func CreatePayload(vehicleInfo VehicleInfo, coord vechpath.Coordinate) any {
 		GpsAlt:       rand.Float64() * 5,
 		SpeedKmh:     rand.Float32() * 60.0, // Speed between 0 and 15 km/h
 		EngineStatus: vehicleInfo.EngineStatus,
+	}
+	event := Event{
+		EventType:   "unknown",
+		Severity:    "any",
+		Timestamp:   commonPayload.Timestamp,
+		Description: generateString(10),
+		Code:        fmt.Sprintf("%04d", rand.Intn(10000)),
 	}
 
 	// DIESEL
@@ -45,13 +69,22 @@ func CreatePayload(vehicleInfo VehicleInfo, coord vechpath.Coordinate) any {
 		switch alertnum {
 		case 0:
 			oilPressureBar = 0.1
+			event.Severity = Critical
+			event.EventType = "oil_pressure_critical"
 		case 1:
 			metricCommon.SpeedKmh = 65
+			event.Severity = Critical
+			event.EventType = "high_speed"
 		case 2:
 			tempC = 102
+			event.Severity = Warning
+			event.EventType = "high_temp_c"
 		case 3:
 			fuelLevelPct = 14
+			event.Severity = Warning
+			event.EventType = "low_fuel_level_pc"
 		}
+		commonPayload.Events = []Event{event}
 
 		return DieselTelemetryPayload{
 			TelemetryPayload: commonPayload,
@@ -77,12 +110,20 @@ func CreatePayload(vehicleInfo VehicleInfo, coord vechpath.Coordinate) any {
 	switch alertnum {
 	case 0:
 		batterySocPct = 9
+		event.Severity = Critical
+		event.EventType = "low_battery_soc_pct"
 	case 1:
 		batteryTempC = 65
+		event.Severity = Warning
+		event.EventType = "high_battery_temp_c"
 	case 2:
 		currentA = 160
+		event.Severity = Warning
+		event.EventType = "anonam_current_a"
 	case 3:
 		metricCommon.SpeedKmh = 20
+		event.Severity = Warning
+		event.EventType = "high_speed"
 	}
 
 	if vehicleInfo.EngineStatus == "on" {
@@ -106,18 +147,30 @@ func CreatePayload(vehicleInfo VehicleInfo, coord vechpath.Coordinate) any {
 		estopStatus := "off"
 		rtkStatus := "fix"
 		alertnum := vehicleInfo.ID % 5
+
 		switch alertnum {
 		case 0:
 			tempCpuC = 90
+			event.Severity = Critical
+			event.EventType = "high_temp_cpu_c"
 		case 1:
 			lteRssi = -90
+			event.Severity = Warning
+			event.EventType = "low_lte_rssi"
 		case 2:
 			estopStatus = "on"
+			event.Severity = Critical
+			event.EventType = "active_estop_status"
 		case 3:
 			rtkStatus = "float"
+			event.Severity = Warning
+			event.EventType = "float_rtk_status"
 		case 4:
 			rtkStatus = "none"
+			event.Severity = Critical
+			event.EventType = "none_rtk_statu"
 		}
+		commonPayload.Events = []Event{event}
 
 		return RobotTelemetryPayload{
 			TelemetryPayload: commonPayload,
@@ -136,6 +189,7 @@ func CreatePayload(vehicleInfo VehicleInfo, coord vechpath.Coordinate) any {
 	}
 	// ROBOT END
 
+	commonPayload.Events = []Event{event}
 	return ElectricTelemetryPayload{
 		TelemetryPayload: commonPayload,
 		Metrics:          electricMetrics,
