@@ -17,9 +17,6 @@ jobs:
           - app_name: backend
             context_dir: ./go-projects-group
             docker_file: Dockerfile.backend
-          - app_name: bot
-            context_dir: ./go-projects-group
-            docker_file: Dockerfile.bot
           - app_name: simulator
             context_dir: ./go-projects-group
             docker_file: Dockerfile.simulator

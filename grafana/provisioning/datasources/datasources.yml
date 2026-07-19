@@ -11,10 +11,10 @@ datasources:
   - name: PostgreSQL_Events
     type: postgres
     url: postgres-db:5432
-    database: fms_telemetry
-    user: aynur
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
     secureJsonData:
-      password: qwertyAynur
+      password: ${POSTGRES_PASSWORD}
     jsonData:
       sslmode: disable
       maxOpenConns: 10
